@@ -23,6 +23,8 @@ SECRET_KEY = 'django-insecure-!2&#!n*d_p0*@zd+i)28ok@ta&km&$v=go^d-af+a8)ow*&#0g
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True  # if False >>py manage.py runserver --insecure
+# TODO: Удалить перед ревью
+# DEBUG = False
 
 # if DEBUG = False: ALLOWED_HOSTS = ['127.0.0.1']
 ALLOWED_HOSTS = []
@@ -133,13 +135,14 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-HOST = '127.0.0.1'
+AUTH_USER_MODEL = 'users.MyUser'
+
+СSRF_FALIURL_VIEW = 'pages.views.csrf_failure'
+
+HOST = ['127.0.0.1', 'localhost']
 if DEBUG:
     INTERNAL_IPS = [HOST]
     INSTALLED_APPS.append('debug_toolbar')
     MIDDLEWARE.append('debug_toolbar.middleware.DebugToolbarMiddleware')
 else:
     ALLOWED_HOSTS.append(HOST)
-
-
-AUTH_USER_MODEL = 'users.MyUser'
