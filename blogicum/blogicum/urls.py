@@ -15,11 +15,19 @@ Including another URLconf
 """
 
 from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path
+from django.contrib.auth.forms import UserChangeForm
+from django.urls import include, path, reverse_lazy
+from django.views.generic.edit import CreateView
+
+
+from users import views
 
 
 urlpatterns = [
+    path('auth/registration/', views.UserCreateView.as_view(), name='registration'),
+    path('auth/', include('django.contrib.auth.urls'), name='login'),
     path('pages/', include('pages.urls', namespace='pages')),
     path('admin/', admin.site.urls),
     path('', include('blog.urls', namespace='blog')),
@@ -37,3 +45,5 @@ if (
 ):
     import debug_toolbar
     urlpatterns += (path('__debug__/', include(debug_toolbar.urls)),)
+
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

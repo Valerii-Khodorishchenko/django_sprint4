@@ -139,6 +139,8 @@ AUTH_USER_MODEL = 'users.MyUser'
 
 СSRF_FALIURL_VIEW = 'pages.views.csrf_failure'
 
+LOGIN_REDIRECT_URL = 'blog:index'
+
 HOST = ['127.0.0.1', 'localhost']
 if DEBUG:
     INTERNAL_IPS = [HOST]
