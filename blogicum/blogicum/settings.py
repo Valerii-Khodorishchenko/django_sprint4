@@ -116,7 +116,8 @@ TIME_ZONE = 'Etc/GMT-5'
 
 USE_I18N = True
 
-USE_L10N = True
+# USE_L10N = True
+USE_L10N = False
 
 USE_TZ = True
 
@@ -137,11 +138,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'users.MyUser'
 
-СSRF_FALIURL_VIEW = 'pages.views.csrf_failure'
+CSRF_FAILURE_VIEW = 'pages.views.csrf_failure'
 
 LOGIN_REDIRECT_URL = 'blog:index'
 
-HOST = ['127.0.0.1', 'localhost']
+MEDIA_ROOT = BASE_DIR / 'media'
+
+HOST = '127.0.0.1'
 if DEBUG:
     INTERNAL_IPS = [HOST]
     INSTALLED_APPS.append('debug_toolbar')

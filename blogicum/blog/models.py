@@ -44,8 +44,9 @@ class Category(PublicationModel):
         verbose_name_plural = 'Категории'
 
     def __str__(self):
-        return (f'|Пост: {self.title[:20]}... \n'
-                f'|Описание: {self.description[:40]}...')
+        return f'{self.title}'
+        #  return (f'|Пост: {self.title[:20]}... \n'
+        #          f'|Описание: {self.description[:40]}...')
 
 
 class Location(PublicationModel):
@@ -87,6 +88,14 @@ class Post(PublicationModel):
         on_delete=models.SET_NULL,
         null=True,
         related_name='posts',
+    )
+    # TODO: оставить как есть или изменить Изображение поста
+    # Допили форму, на сервер изображение не приййдёт
+    
+    image = models.ImageField(
+        'Изображение',
+        upload_to='posts_images',
+        blank=True
     )
     objects = PostQuerySet.as_manager()
 
