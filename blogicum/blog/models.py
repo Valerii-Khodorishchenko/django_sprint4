@@ -89,9 +89,6 @@ class Post(PublicationModel):
         null=True,
         related_name='posts',
     )
-    # TODO: оставить как есть или изменить Изображение поста
-    # Допили форму, на сервер изображение не приййдёт
-    
     image = models.ImageField(
         'Изображение',
         upload_to='posts_images',
@@ -106,3 +103,17 @@ class Post(PublicationModel):
 
     def __str__(self):
         return f'|Пост: {self.title[:20]}...\n|Текст: {self.text[:40]}...'
+
+
+class Comments(models.Model):
+    text = models.TextField('Введите коментарий')
+    post = models.ForeignKey(
+        Post,
+        on_delete=models.CASCADE,
+        related_name='comments',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    class Meta:
+        ordering = ('created_at',)

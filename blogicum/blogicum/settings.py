@@ -144,6 +144,10 @@ LOGIN_REDIRECT_URL = 'blog:index'
 
 MEDIA_ROOT = BASE_DIR / 'media'
 
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+
+EMAIL_FILE_PATH = BASE_DIR / 'sent_emails' 
+
 HOST = '127.0.0.1'
 if DEBUG:
     INTERNAL_IPS = [HOST]

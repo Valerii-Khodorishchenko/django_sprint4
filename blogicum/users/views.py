@@ -3,14 +3,17 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.db.models import Count
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, UpdateView
 
 
+from blog.models import Post, Comments
+from blog.views import CommentsCountMixin
 from .models import MyUser
 from .form import CustomUserCreationForm, CustomUserUpdateForm
-from blog.models import Post
+
 
 
 class UserCreateView(CreateView):
@@ -36,13 +39,27 @@ class ProfileDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.get_object()
-        posts = Post.objects.get_published_posts(
-        ).filter(
-            author=user
-        ).order_by(
-            '-pub_date',
-            'title'
-        )
+        if self.request.user.username == user.username:
+            posts = Post.objects.select_related(
+                'location', 'author', 'category'
+            ).filter(
+                author=user
+            ).order_by(
+                '-pub_date',
+                'title'
+            ).annotate(
+                comment_count=Count('comments')
+            )
+        else:
+            posts = Post.objects.get_published_posts(
+            ).filter(
+                author=user
+            ).order_by(
+                '-pub_date',
+                'title'
+            ).annotate(
+                comment_count=Count('comments')
+            )
         paginator = Paginator(posts, 10)
         page = self.request.GET.get('page')
         context['page_obj'] = paginator.get_page(page)
