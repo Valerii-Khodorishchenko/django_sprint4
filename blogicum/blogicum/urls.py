@@ -1,21 +1,12 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.contrib.auth.forms import UserChangeForm
-from django.urls import include, path, reverse_lazy
-from django.views.generic.edit import CreateView
+from django.urls import include, path
 
-
-# from users import views
-from users.views import edit_profile, ProfileDetailView
 
 urlpatterns = [
-    # path('profile/<slug:username>/edit/', edit_profile, name='edit_profile'),
-    # path('profile/<slug:username>/', ProfileDetailView.as_view(), name='profile'),
     path('auth/', include('django.contrib.auth.urls'), name='login'),
     path('auth/', include('users.urls')),
-    # path('auth/registration/', views.UserCreateView.as_view(), name='registration'),
-    # path('auth/', include('users.urls')),
     path('pages/', include('pages.urls', namespace='pages')),
     path('admin/', admin.site.urls),
     path('', include('blog.urls', namespace='blog')),

@@ -1,5 +1,5 @@
-from django.shortcuts import render
 from django.views.generic import TemplateView
+from django.shortcuts import render
 
 
 class AboutPage(TemplateView):
@@ -10,7 +10,6 @@ class RulesPage(TemplateView):
     template_name = 'pages/rules.html'
 
 
-# TODO: Проверить кастомные ошибки
 def csrf_failure(request, reason=''):
     return render(request, 'pages/403csrf.html', status=403)
 
