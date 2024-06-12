@@ -1,8 +1,4 @@
 from django.contrib.auth import get_user_model, login
-<<<<<<< HEAD
-=======
-from django.contrib.auth.forms import UserCreationForm
->>>>>>> 6ba8cd4bdf27b74e5f926cb44eaca490ac29a0a6
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.db.models import Count
@@ -10,22 +6,17 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, UpdateView
 
-<<<<<<< HEAD
 from blog.models import Post
 from .models import MyUser
 from .form import CustomUserCreationForm, CustomUserChangeForm
-=======
-
-from blog.models import Post
-from .form import CustomUserChangeForm
->>>>>>> 6ba8cd4bdf27b74e5f926cb44eaca490ac29a0a6
 
 
 User = get_user_model()
 
 
 class UserCreateView(CreateView):
-    form_class = UserCreationForm
+    model = MyUser
+    form_class = CustomUserCreationForm
     template_name = 'registration/registration_form.html'
     success_url = reverse_lazy('blog:index')
 
@@ -52,7 +43,7 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
 
 
 class ProfileDetailView(DetailView):
-    model = User
+    model = MyUser
     template_name = 'blog/profile.html'
     slug_url_kwarg = 'username'
     slug_field = 'username'
