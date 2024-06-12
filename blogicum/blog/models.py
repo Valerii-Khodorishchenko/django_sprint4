@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils import timezone
 
+
 User = get_user_model()
 
 
@@ -45,8 +46,6 @@ class Category(PublicationModel):
 
     def __str__(self):
         return f'{self.title}'
-        #  return (f'|Пост: {self.title[:20]}... \n'
-        #          f'|Описание: {self.description[:40]}...')
 
 
 class Location(PublicationModel):

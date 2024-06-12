@@ -1,24 +1,22 @@
-from django.contrib import messages
+from django.contrib.auth import get_user_model, login
+from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth import login
-from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Count
-from django.shortcuts import get_object_or_404, render, redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, UpdateView
 
 
-from blog.models import Post, Comments
-from blog.views import CommentsCountMixin
-from .models import MyUser
-from .form import CustomUserCreationForm, CustomUserUpdateForm
+from blog.models import Post
+from .form import CustomUserChangeForm
 
+
+User = get_user_model()
 
 
 class UserCreateView(CreateView):
-    model = MyUser
-    form_class = CustomUserCreationForm
+    form_class = UserCreationForm
     template_name = 'registration/registration_form.html'
     success_url = reverse_lazy('blog:index')
 
@@ -30,11 +28,15 @@ class UserCreateView(CreateView):
 
 
 class ProfileDetailView(DetailView):
-    model = MyUser
+    model = User
     template_name = 'blog/profile.html'
     slug_url_kwarg = 'username'
     slug_field = 'username'
     context_object_name = 'profile'
+
+    def get_object(self):
+        username = self.kwargs.get('username')
+        return get_object_or_404(User, username=username)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -67,8 +69,7 @@ class ProfileDetailView(DetailView):
 
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
-    model = MyUser
-    form_class = CustomUserUpdateForm
+    form_class = CustomUserChangeForm
     template_name = 'blog/user.html'
     success_url = reverse_lazy('blog:profile')
 
@@ -79,38 +80,3 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
         user = form.save()
         login(self.request, user)
         return redirect('blog:profile', username=user.username)
-
-
-
-# TODO: Удалить FBV
-def profile(request, username):
-    template_name = 'blog/profile.html'
-    user = MyUser.objects.get(username=username)
-    posts = Post.objects.get_published_posts(
-    ).filter(
-        author=user
-    ).order_by(
-        '-pub_date',
-        'title'
-    )
-    page_obj = Paginator(posts, 10).get_page(request.GET.get('page'))
-    context = {
-        'profile': user,
-        'page_obj': page_obj,
-    }
-    return render(request, template_name, context)
-
-
-@login_required
-def edit_profile(request):
-    if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST, instance=request.user)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            messages.success(request, 'Your profile was successfully updated!')
-            return redirect('blog:profile', username=request.user)
-    else:
-        form = CustomUserCreationForm(instance=request.user)
-
-    return render(request, 'blog/user.html', {'form': form})
