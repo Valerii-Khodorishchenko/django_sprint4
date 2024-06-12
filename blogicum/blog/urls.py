@@ -2,10 +2,19 @@ from django.urls import include, path
 
 from . import views
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 6ba8cd4bdf27b74e5f926cb44eaca490ac29a0a6
 app_name = 'blog'
 
 urlpatterns = [
+<<<<<<< HEAD
+=======
+    # TODO: После тестов попробуй перенести профиль в юзер
+
+    # path('profile/<slug:username>/', profile, name='profile'),
+>>>>>>> 6ba8cd4bdf27b74e5f926cb44eaca490ac29a0a6
     path('profile/', include('users.urls')),
     path('posts/create/', views.PostCreateView.as_view(), name='create_post'),
     path('posts/<int:post_id>/edit/', views.PostUpdateView.as_view(),
