@@ -1,6 +1,7 @@
 from django.urls import include, path
 
 from . import views
+from users.views import edit_profile
 # from users.views import edit_profile, profile
 # TODO: убери коментарии
 app_name = 'blog'
@@ -8,7 +9,7 @@ app_name = 'blog'
 
 urlpatterns = [
     # TODO: После тестов попробуй перенести профиль в юзер
-    # path('profile/edit/', edit_profile, name='edit_profile'),
+#     path('profile/<slug:username>/edit/', edit_profile, name='edit_profile'),
     # path('profile/<slug:username>/', profile, name='profile'),
     path('profile/', include('users.urls')),
     path('posts/create/', views.PostCreateView.as_view(), name='create_post'),

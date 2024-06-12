@@ -7,12 +7,14 @@ from django.views.generic.edit import CreateView
 
 
 # from users import views
-
+from users.views import edit_profile, ProfileDetailView
 
 urlpatterns = [
+    # path('profile/<slug:username>/edit/', edit_profile, name='edit_profile'),
+    # path('profile/<slug:username>/', ProfileDetailView.as_view(), name='profile'),
+    path('auth/', include('django.contrib.auth.urls'), name='login'),
     path('auth/', include('users.urls')),
     # path('auth/registration/', views.UserCreateView.as_view(), name='registration'),
-    # path('auth/', include('django.contrib.auth.urls'), name='login'),
     # path('auth/', include('users.urls')),
     path('pages/', include('pages.urls', namespace='pages')),
     path('admin/', admin.site.urls),

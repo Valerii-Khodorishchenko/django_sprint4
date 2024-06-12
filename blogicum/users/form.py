@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.contrib.auth import get_user_model
 
 
@@ -14,9 +14,14 @@ class CustomUserCreationForm(UserCreationForm):
         fields = ('username', 'email', 'password1')
 
 
-class CustomUserUpdateForm(UserCreationForm):
+class CustomUserChangeForm(UserChangeForm):
     email = forms.EmailField(required=True)
 
     class Meta:
         model = User
-        fields = ['username', 'first_name', 'last_name', 'email']
+        fields = ['first_name', 'last_name', 'username', 'email']
+
+    def __init__(self, *args, **kwargs):
+        super(CustomUserChangeForm, self).__init__(*args, **kwargs)
+        if 'password' in self.fields:
+            del self.fields['password']
