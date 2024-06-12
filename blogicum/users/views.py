@@ -81,3 +81,4 @@ class ProfileDetailView(DetailView):
         page = self.request.GET.get('page')
         context['page_obj'] = paginator.get_page(page)
         return context
+# comment
