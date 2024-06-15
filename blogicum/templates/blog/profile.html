@@ -4,6 +4,18 @@
 {% endblock %}
 {% block content %}
   <h1 class="mb-5 text-center ">Страница пользователя {{ profile.username }}</h1>
+  <div class="mb-5 col d-flex justify-content-center">
+    <div class="card" style="width: 40rem;">
+      {% if profile.image %}
+        <a href="{{ profile.image.url }}" target="_blank">
+          <img class="border-3 rounded img-fluid mb-2 mx-auto d-block" src="{{ profile.image.url }}">
+        </a>
+      {% endif %}
+      <div class="card-body">
+        <p class="card-text">{{ profile.info }}</p>
+      </div>
+    </div>
+  </div>
   <small>
     <ul class="list-group list-group-horizontal justify-content-center mb-3">
       <li class="list-group-item text-muted">Имя пользователя: {% if profile.get_full_name %}{{ profile.get_full_name }}{% else %}не указано{% endif %}</li>

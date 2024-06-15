@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.db.models import Count
 from django.utils import timezone
 
 
@@ -7,14 +8,39 @@ User = get_user_model()
 
 
 class PostQuerySet(models.QuerySet):
-    def get_published_posts(self):
-        return self.select_related(
-            'location', 'author', 'category'
-        ).filter(
+
+    def filter_published(self):
+        return self.filter(
             pub_date__lte=timezone.now(),
             is_published=True,
             category__is_published=True
         )
+
+    def filter_by_author(self, author):
+        return self.filter(author=author)
+
+    def get_posts(self):
+        return (
+            self.select_related('location', 'author', 'category')
+            .order_by('-pub_date', 'title')
+            .annotate(comment_count=Count('comments'))
+        )
+
+
+class PostManager(models.Manager):
+    def get_user_post_cards(self, author):
+        return PostQuerySet(self.model).get_posts().filter_by_author(author)
+
+    def get_other_user_post_cards(self, author):
+        return (
+            PostQuerySet(self.model)
+            .get_posts()
+            .filter_by_author(author)
+            .filter_published()
+        )
+
+    def get_published_posts(self):
+        return PostQuerySet(self.model).get_posts().filter_published()
 
 
 class PublicationModel(models.Model):
@@ -45,7 +71,7 @@ class Category(PublicationModel):
         verbose_name_plural = 'Категории'
 
     def __str__(self):
-        return f'{self.title}'
+        return self.title
 
 
 class Location(PublicationModel):
@@ -94,6 +120,7 @@ class Post(PublicationModel):
         blank=True
     )
     objects = PostQuerySet.as_manager()
+    posts_objects = PostManager()
 
     class Meta:
         verbose_name = 'публикация'

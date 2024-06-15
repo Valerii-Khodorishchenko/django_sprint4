@@ -1,6 +1,7 @@
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.db.models import Count
+from django.core.paginator import Paginator
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -10,6 +11,8 @@ from django.views.generic import (
 
 from .form import CommentsForm, PostForm
 from .models import Category, Comments, Post
+
+User = get_user_model()
 
 
 class ConfirmAuthorMixin:
@@ -48,9 +51,7 @@ class CommentsCountMixin:
     queryset = Comments.objects.prefetch_related('author')
 
     def get_queryset(self):
-        return Post.objects.get_published_posts().annotate(
-            comment_count=Count('comments')
-        ).order_by('-pub_date', 'title')
+        return Post.posts_objects.get_published_posts()
 
 
 class PostCreateView(FormValidMixin, LoginRequiredMixin, CreateView):
@@ -117,17 +118,47 @@ class CategoryPostListView(CommentsCountMixin, ListView):
     template_name = 'blog/category.html'
 
     def get_queryset(self):
-        category_slug = self.kwargs.get('category_slug')
+        category_slug = self.kwargs['category_slug']
         return super().get_queryset().filter(category__slug=category_slug)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if not hasattr(self, '_cached_category'):
-            category_slug = self.kwargs.get('category_slug')
+            category_slug = self.kwargs['category_slug']
             self._cached_category = get_object_or_404(
                 Category.objects.all(), slug=category_slug, is_published=True
             )
         context['category'] = self._cached_category
+        return context
+
+# TODO: Измавь запрос
+class ProfileDetailView(DetailView):
+    model = User
+    template_name = 'blog/profile.html'
+    slug_url_kwarg = 'username'
+    slug_field = 'username'
+    context_object_name = 'profile'
+
+    def get_object(self):
+        username = self.kwargs['username']
+        return get_object_or_404(User, username=username)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.get_object()
+        if self.request.user.username == user.username:
+            posts = (user
+                     .posts(manager='posts_objects')
+                     .get_user_post_cards(user)
+                     )
+        else:
+            posts = (user
+                     .posts(manager='posts_objects')
+                     .get_other_user_post_cards(user)
+                     )
+        paginator = Paginator(posts, 10)
+        page = self.request.GET.get('page')
+        context['page_obj'] = paginator.get_page(page)
         return context
 
 
