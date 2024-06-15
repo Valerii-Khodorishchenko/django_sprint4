@@ -157,3 +157,5 @@ venv/
 .pip/
 pip/
 db.json
+blogicum/indented_db copy.json
+blogicum/indented_db.json
