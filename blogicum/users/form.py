@@ -19,12 +19,7 @@ class CustomUserChangeForm(UserChangeForm):
 
     class Meta:
         model = User
-        fields = ['image', 'first_name', 'last_name', 'username', 'email',
-                  'info']
-        widgets = {
-            'profile_picture': forms.ClearableFileInput(attrs={
-                'class': 'form-control'
-            })}
+        fields = ['first_name', 'last_name', 'username', 'email']
 
     def __init__(self, *args, **kwargs):
         super(CustomUserChangeForm, self).__init__(*args, **kwargs)

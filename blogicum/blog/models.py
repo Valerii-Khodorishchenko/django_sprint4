@@ -71,7 +71,8 @@ class Category(PublicationModel):
         verbose_name_plural = 'Категории'
 
     def __str__(self):
-        return self.title
+        return self.title[:20] + '...' if len(self.title) > 20 else self.title
+
 
 
 class Location(PublicationModel):
@@ -82,7 +83,7 @@ class Location(PublicationModel):
         verbose_name_plural = 'Местоположения'
 
     def __str__(self):
-        return f'{self.name[:20]}...'
+        return self.name[:20] + '...' if len(self.name) > 20 else self.name
 
 
 class Post(PublicationModel):
