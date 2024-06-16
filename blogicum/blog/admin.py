@@ -71,3 +71,4 @@ admin.site.empty_value_display = 'Не задано'
 admin.site.register(Post, PostAdmin)
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Location, LocationAdmin)
+# mfajf
