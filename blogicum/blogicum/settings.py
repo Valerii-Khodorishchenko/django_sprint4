@@ -104,6 +104,10 @@ EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 
 EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'
 
+DATE_FORMAT = 'F j, Y'
+
+DATETIME_FORMAT = 'F j, Y, H:i'
+
 HOST = '127.0.0.1'
 if DEBUG:
     INTERNAL_IPS = [HOST]

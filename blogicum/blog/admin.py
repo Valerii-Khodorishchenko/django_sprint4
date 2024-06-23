@@ -67,7 +67,34 @@ class LocationAdmin(admin.ModelAdmin):
     )
 
 
+class CommentsAdmin(admin.ModelAdmin):
+    list_display = (
+        'post',
+        'created_at',
+        'author',
+        'short_comment',
+    )
+    search_fields = (
+        'post__title', 'author__username', 'text',
+    )
+    list_filter = (
+        'post',
+        'author',
+        'created_at',
+    )
+
+    def short_comment(self, obj):
+        max_len = 50
+        return (f'{obj.text[:max_len]}...'
+                if len(obj.text) > max_len else
+                obj.text)
+
+
+    short_comment.short_description = 'Коментарий'
+
+
 admin.site.empty_value_display = 'Не задано'
 admin.site.register(Post, PostAdmin)
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Location, LocationAdmin)
+admin.site.register(Comments, CommentsAdmin)

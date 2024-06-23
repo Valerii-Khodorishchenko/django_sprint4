@@ -71,8 +71,7 @@ class Category(PublicationModel):
         verbose_name_plural = 'Категории'
 
     def __str__(self):
-        return self.title[:20] + '...' if len(self.title) > 20 else self.title
-
+        return shorten(self.title)
 
 
 class Location(PublicationModel):
@@ -83,7 +82,7 @@ class Location(PublicationModel):
         verbose_name_plural = 'Местоположения'
 
     def __str__(self):
-        return self.name[:20] + '...' if len(self.name) > 20 else self.name
+        return shorten(self.name)
 
 
 class Post(PublicationModel):
@@ -129,18 +128,34 @@ class Post(PublicationModel):
         ordering = ('-pub_date', 'title')
 
     def __str__(self):
-        return f'|Пост: {self.title[:20]}...\n|Текст: {self.text[:40]}...'
+        return f'Пост: {shorten(self.title)}|Текст: {shorten(self.text, 40)}'
 
 
 class Comments(models.Model):
-    text = models.TextField('Введите коментарий')
+    text = models.TextField(verbose_name='Коментарий')
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
         related_name='comments',
+        verbose_name='Пост'
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Оставлен')
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Автор'
+    )
 
     class Meta:
+        verbose_name = 'Коментарий'
+        verbose_name_plural = 'Коментарии'
         ordering = ('created_at',)
+
+    def __str__(self):
+        return shorten(self.text)
+
+
+def shorten(any_str, length=20):
+    return any_str[:length] + "..." if len(any_str) > length else any_str
