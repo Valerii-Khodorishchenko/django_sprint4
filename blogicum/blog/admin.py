@@ -94,7 +94,6 @@ class CommentsAdmin(PaginatorMixin, admin.ModelAdmin):
                 if len(obj.text) > max_len else
                 obj.text)
 
-
     short_comment.short_description = 'Коментарий'
 
 
