@@ -12,15 +12,9 @@ from django.views.generic import (
 from .form import CommentsForm, PostForm
 from .models import Category, Comments, Post
 
+PAGINATOR_BY = 10
+
 User = get_user_model()
-
-
-class ConfirmAuthorMixin:
-    def dispatch(self, request, *args, **kwargs):
-        obj = self.get_object()
-        if not obj.is_published and obj.author != request.user:
-            raise Http404("Пост не опкбликован")
-        return super().dispatch(request, *args, **kwargs)
 
 
 class FormValidMixin:
@@ -47,11 +41,8 @@ class PostChangeMixin:
 
 class CommentsCountMixin:
     model = Post
-    paginate_by = 10
+    paginate_by = PAGINATOR_BY
     queryset = Comments.objects.prefetch_related('author')
-
-    def get_queryset(self):
-        return Post.posts_objects.get_published_posts()
 
 
 class PostCreateView(FormValidMixin, LoginRequiredMixin, CreateView):
@@ -60,32 +51,24 @@ class PostCreateView(FormValidMixin, LoginRequiredMixin, CreateView):
     template_name = 'blog/create.html'
 
     def get_success_url(self):
-        return reverse(
-            'blog:profile',
-            kwargs={'username': self.request.user.username}
-        )
+        return reverse('blog:profile', args=[self.request.user.username])
 
 
 class PostUpdateView(FormValidMixin, OnlyAuthorMixin, PostChangeMixin,
                      UpdateView):
     def get_success_url(self):
-        return reverse('blog:post_detail', kwargs={'post_id': self.object.pk})
+        return reverse('blog:post_detail', args=[self.object.pk])
 
 
 class PostDeleteView(OnlyAuthorMixin, PostChangeMixin, DeleteView):
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['form'] = PostForm(instance=self.object)
-        return context
-
-    def get_success_url(self):
-        return reverse(
-            'blog:profile',
-            kwargs={'username': self.request.user.username}
+        return super().get_context_data(
+            **kwargs,
+            form=PostForm(instance=self.object)
         )
 
-    def handle_no_permission(self):
-        return redirect('blog:profile', username=self.request.user)
+    def get_success_url(self):
+        return reverse('blog:profile', args=[self.request.user.username])
 
 
 class PostDetailView(DetailView):
@@ -94,24 +77,31 @@ class PostDetailView(DetailView):
     pk_url_kwarg = 'post_id'
 
     def get_object(self, queryset=None):
-        post = super().get_object(queryset=queryset)
-        if post.pub_date > timezone.now() and post.author != self.request.user:
-            raise Http404("Post not found")
-        if not post.is_published and post.author != self.request.user:
-            raise Http404("Post not found")
-        if not post.category.is_published and post.author != self.request.user:
-            raise Http404("Category not found")
-        return post
+        post = super().get_object(queryset=queryset,)
+        if post.author == self.request.user:
+            return post
+        return get_object_or_404(Post,
+                                 id=post.id,
+                                 is_published=True,
+                                 category__is_published=True)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['form'] = CommentsForm()
-        context['comments'] = self.object.comments.select_related('author')
-        return context
+        context['comments'] = (self.object.post_comments
+                               .select_related('author'))
+        return super().get_context_data(
+            **kwargs,
+            form=CommentsForm(),
+            comments=self.object.post_comments.select_related('author')
+        )
 
 
 class PostsListView(CommentsCountMixin, ListView):
     template_name = 'blog/index.html'
+
+    def get_queryset(self):
+        return Post.posts.get_published_posts()
 
 
 class CategoryPostListView(CommentsCountMixin, ListView):
@@ -119,19 +109,17 @@ class CategoryPostListView(CommentsCountMixin, ListView):
 
     def get_queryset(self):
         category_slug = self.kwargs['category_slug']
-        return super().get_queryset().filter(category__slug=category_slug)
+        category = get_object_or_404(Category, slug=category_slug)
+        return category.categorized_posts.filter_published()
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        if not hasattr(self, '_cached_category'):
-            category_slug = self.kwargs['category_slug']
-            self._cached_category = get_object_or_404(
-                Category.objects.all(), slug=category_slug, is_published=True
-            )
-        context['category'] = self._cached_category
-        return context
+        slug = self.kwargs['category_slug']
+        return super().get_context_data(
+            **kwargs,
+            category=Category.objects.get_published_category(slug)
+        )
 
-# TODO: Измавь запрос
+
 class ProfileDetailView(DetailView):
     model = User
     template_name = 'blog/profile.html'
@@ -144,22 +132,23 @@ class ProfileDetailView(DetailView):
         return get_object_or_404(User, username=username)
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
         user = self.get_object()
         if self.request.user.username == user.username:
             posts = (user
-                     .posts(manager='posts_objects')
+                     .authored_posts(manager='posts')
                      .get_user_post_cards(user)
                      )
         else:
             posts = (user
-                     .posts(manager='posts_objects')
+                     .authored_posts(manager='posts')
                      .get_other_user_post_cards(user)
                      )
-        paginator = Paginator(posts, 10)
+        paginator = Paginator(posts, PAGINATOR_BY)
         page = self.request.GET.get('page')
-        context['page_obj'] = paginator.get_page(page)
-        return context
+        return super().get_context_data(
+            **kwargs,
+            page_obj=paginator.get_page(page)
+        )
 
 
 @login_required

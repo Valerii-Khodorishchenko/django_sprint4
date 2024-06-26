@@ -1,5 +1,4 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
 from django.utils import timezone
 
 from .models import Comments, Post
@@ -7,9 +6,9 @@ from .models import Comments, Post
 
 class PostForm(forms.ModelForm):
 
-    class Meta(UserCreationForm.Meta):
+    class Meta:
         model = Post
-        fields = ('title', 'text', 'pub_date', 'location', 'category', 'image')
+        exclude = ('author',)
         widgets = {
             'pub_date': forms.DateTimeInput(attrs={
                 'type': 'datetime-local',

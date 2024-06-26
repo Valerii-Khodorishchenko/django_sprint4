@@ -1,10 +1,16 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import Count
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
 
 User = get_user_model()
+
+
+class CategoryQuerySet(models.QuerySet):
+    def get_published_category(self, slug):
+        return get_object_or_404(self, slug=slug, is_published=True)
 
 
 class PostQuerySet(models.QuerySet):
@@ -23,7 +29,7 @@ class PostQuerySet(models.QuerySet):
         return (
             self.select_related('location', 'author', 'category')
             .order_by('-pub_date', 'title')
-            .annotate(comment_count=Count('comments'))
+            .annotate(comment_count=Count('post_comments'))
         )
 
 
@@ -65,6 +71,7 @@ class Category(PublicationModel):
                    'латиницы, цифры, дефис и подчёркивание.'),
         unique=True
     )
+    objects = CategoryQuerySet.as_manager()
 
     class Meta:
         verbose_name = 'категория'
@@ -97,7 +104,7 @@ class Post(PublicationModel):
         User,
         verbose_name='Автор публикации',
         on_delete=models.CASCADE,
-        related_name='posts',
+        related_name='authored_posts',
     )
     location = models.ForeignKey(
         Location,
@@ -105,14 +112,14 @@ class Post(PublicationModel):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='posts',
+        related_name='posts_at_location',
     )
     category = models.ForeignKey(
         Category,
         verbose_name='Категория',
         on_delete=models.SET_NULL,
         null=True,
-        related_name='posts',
+        related_name='categorized_posts',
     )
     image = models.ImageField(
         'Изображение',
@@ -120,7 +127,7 @@ class Post(PublicationModel):
         blank=True
     )
     objects = PostQuerySet.as_manager()
-    posts_objects = PostManager()
+    posts = PostManager()
 
     class Meta:
         verbose_name = 'публикация'
@@ -136,8 +143,8 @@ class Comments(models.Model):
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
-        related_name='comments',
-        verbose_name='Пост'
+        verbose_name='Пост',
+        related_name='post_comments',
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
@@ -145,7 +152,8 @@ class Comments(models.Model):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Автор'
+        verbose_name='Автор',
+        related_name='authored_comments',
     )
 
     class Meta:
