@@ -1,12 +1,15 @@
 from django.urls import include, path
 
+from users.views import ProfileUpdateView
 from . import views
 
 
 app_name = 'blog'
 
 urlpatterns = [
-    path('profile/', include('users.urls')),
+    path('profile/edit/', ProfileUpdateView.as_view(), name='edit_profile'),
+    path('profile/<slug:username>/', views.ProfileDetailView.as_view(),
+         name='profile'),
     path('posts/create/', views.PostCreateView.as_view(), name='create_post'),
     path('posts/<int:post_id>/edit/', views.PostUpdateView.as_view(),
          name='edit_post'),

@@ -29,7 +29,7 @@ class PostQuerySet(models.QuerySet):
         return (
             self.select_related('location', 'author', 'category')
             .order_by('-pub_date', 'title')
-            .annotate(comment_count=Count('post_comments'))
+            .annotate(comment_count=Count('comments'))
         )
 
 
@@ -78,7 +78,7 @@ class Category(PublicationModel):
         verbose_name_plural = 'Категории'
 
     def __str__(self):
-        return shorten(self.title)
+        return self.title[:20] + '...'
 
 
 class Location(PublicationModel):
@@ -89,7 +89,7 @@ class Location(PublicationModel):
         verbose_name_plural = 'Местоположения'
 
     def __str__(self):
-        return shorten(self.name)
+        return self.name[:20] + '...'
 
 
 class Post(PublicationModel):
@@ -104,7 +104,6 @@ class Post(PublicationModel):
         User,
         verbose_name='Автор публикации',
         on_delete=models.CASCADE,
-        related_name='authored_posts',
     )
     location = models.ForeignKey(
         Location,
@@ -119,7 +118,6 @@ class Post(PublicationModel):
         verbose_name='Категория',
         on_delete=models.SET_NULL,
         null=True,
-        related_name='categorized_posts',
     )
     image = models.ImageField(
         'Изображение',
@@ -127,15 +125,16 @@ class Post(PublicationModel):
         blank=True
     )
     objects = PostQuerySet.as_manager()
-    posts = PostManager()
+    posts_manager = PostManager()
 
     class Meta:
+        default_related_name = 'posts'
         verbose_name = 'публикация'
         verbose_name_plural = 'Публикации'
         ordering = ('-pub_date', 'title')
 
     def __str__(self):
-        return f'Пост: {shorten(self.title)}|Текст: {shorten(self.text, 40)}'
+        return f'Пост: {self.title[:20]}... |Текст: {self.text[:40]}...'
 
 
 class Comments(models.Model):
@@ -144,7 +143,6 @@ class Comments(models.Model):
         Post,
         on_delete=models.CASCADE,
         verbose_name='Пост',
-        related_name='post_comments',
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
@@ -153,17 +151,13 @@ class Comments(models.Model):
         User,
         on_delete=models.CASCADE,
         verbose_name='Автор',
-        related_name='authored_comments',
     )
 
     class Meta:
+        default_related_name = 'comments'
         verbose_name = 'Коментарий'
         verbose_name_plural = 'Коментарии'
         ordering = ('created_at',)
 
     def __str__(self):
-        return shorten(self.text)
-
-
-def shorten(any_str, length=20):
-    return any_str[:length] + "..." if len(any_str) > length else any_str
+        return self.text[20] + '...'

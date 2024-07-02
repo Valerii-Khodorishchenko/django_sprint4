@@ -3,12 +3,7 @@ from django.contrib import admin
 from .models import Category, Location, Post, Comments
 
 
-class PaginatorMixin:
-    list_per_page = 10
-    list_max_show_all = 1000
-
-
-class PostAdmin(PaginatorMixin, admin.ModelAdmin):
+class PostAdmin(admin.ModelAdmin):
     list_display = (
         'title',
         'author',
@@ -40,7 +35,7 @@ class PostInline(admin.StackedInline):
     ordering = ('-created_at', 'title')
 
 
-class CategoryAdmin(PaginatorMixin, admin.ModelAdmin):
+class CategoryAdmin(admin.ModelAdmin):
     list_display = (
         'title',
         'is_published',
@@ -57,7 +52,7 @@ class CategoryAdmin(PaginatorMixin, admin.ModelAdmin):
     inlines = (PostInline,)
 
 
-class LocationAdmin(PaginatorMixin, admin.ModelAdmin):
+class LocationAdmin(admin.ModelAdmin):
     list_display = (
         'name',
         'is_published',
@@ -72,7 +67,7 @@ class LocationAdmin(PaginatorMixin, admin.ModelAdmin):
     )
 
 
-class CommentsAdmin(PaginatorMixin, admin.ModelAdmin):
+class CommentsAdmin(admin.ModelAdmin):
     list_display = (
         'post',
         'created_at',

@@ -1,18 +1,16 @@
-from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views.generic import (
     CreateView, DeleteView, DetailView, ListView, UpdateView)
 
 from .form import CommentsForm, PostForm
-from .models import Category, Comments, Post
+from .models import Category, Comments, Post, User
 
 PAGINATOR_BY = 10
-
-User = get_user_model()
 
 
 class FormValidMixin:
@@ -23,8 +21,7 @@ class FormValidMixin:
 
 class OnlyAuthorMixin(UserPassesTestMixin):
     def test_func(self):
-        object = self.get_object()
-        return object.author == self.request.user
+        return self.get_object().author == self.request.user
 
     def handle_no_permission(self):
         return redirect('blog:post_detail', post_id=self.get_object().pk)
@@ -79,27 +76,23 @@ class PostDetailView(DetailView):
         if post.author == self.request.user:
             return post
         return get_object_or_404(Post,
+                                #  TODO: фильтр в одном месте
                                  id=post.id,
+                                 pub_date__lte=timezone.now(),
                                  is_published=True,
                                  category__is_published=True)
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['form'] = CommentsForm()
-        context['comments'] = (self.object.post_comments
-                               .select_related('author'))
         return super().get_context_data(
             **kwargs,
             form=CommentsForm(),
-            comments=self.object.post_comments.select_related('author')
+            comments=self.object.comments.select_related('author')
         )
 
 
 class PostsListView(CommentsCountMixin, ListView):
     template_name = 'blog/index.html'
-
-    def get_queryset(self):
-        return Post.posts.get_published_posts()
+    queryset = Post.posts_manager.get_published_posts()
 
 
 class CategoryPostListView(CommentsCountMixin, ListView):
@@ -107,8 +100,9 @@ class CategoryPostListView(CommentsCountMixin, ListView):
 
     def get_queryset(self):
         category_slug = self.kwargs['category_slug']
-        category = get_object_or_404(Category, slug=category_slug)
-        return category.categorized_posts.filter_published()
+        category = get_object_or_404(Category, slug=category_slug,
+                                     is_published=True)
+        return category.posts.filter_published()
 
     def get_context_data(self, **kwargs):
         slug = self.kwargs['category_slug']
@@ -126,20 +120,19 @@ class ProfileDetailView(DetailView):
     context_object_name = 'profile'
 
     def get_object(self):
-        username = self.kwargs['username']
-        return get_object_or_404(User, username=username)
-
+        return get_object_or_404(User, username=self.kwargs['username'])
+# TODO MANAGER
     def get_context_data(self, **kwargs):
-        user = self.get_object()
-        if self.request.user.username == user.username:
-            posts = (user
-                     .authored_posts(manager='posts')
-                     .get_user_post_cards(user)
+        author = self.get_object()
+        if self.request.user.username == author.username:
+            posts = (author
+                     .posts(manager='posts_manager')
+                     .get_user_post_cards(author)
                      )
         else:
-            posts = (user
-                     .authored_posts(manager='posts')
-                     .get_other_user_post_cards(user)
+            posts = (author
+                     .posts(manager='posts_manager')
+                     .get_other_user_post_cards(author)
                      )
         paginator = Paginator(posts, PAGINATOR_BY)
         page = self.request.GET.get('page')
