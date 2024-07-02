@@ -3,12 +3,13 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.utils import timezone
 from django.views.generic import (
     CreateView, DeleteView, DetailView, ListView, UpdateView)
 
 from .form import CommentsForm, PostForm
-from .models import Category, Comments, Post, User
+from .models import (
+    Comments, Post, User, category_check, filter_published, get_posts)
+
 
 PAGINATOR_BY = 10
 
@@ -75,12 +76,10 @@ class PostDetailView(DetailView):
         post = super().get_object(queryset=queryset,)
         if post.author == self.request.user:
             return post
-        return get_object_or_404(Post,
-                                #  TODO: фильтр в одном месте
-                                 id=post.id,
-                                 pub_date__lte=timezone.now(),
-                                 is_published=True,
-                                 category__is_published=True)
+        return get_object_or_404(
+            filter_published(get_posts(Post.objects)),
+            id=post.id
+        )
 
     def get_context_data(self, **kwargs):
         return super().get_context_data(
@@ -92,23 +91,21 @@ class PostDetailView(DetailView):
 
 class PostsListView(CommentsCountMixin, ListView):
     template_name = 'blog/index.html'
-    queryset = Post.posts_manager.get_published_posts()
+    queryset = filter_published(get_posts(Post.objects))
 
 
 class CategoryPostListView(CommentsCountMixin, ListView):
     template_name = 'blog/category.html'
 
     def get_queryset(self):
-        category_slug = self.kwargs['category_slug']
-        category = get_object_or_404(Category, slug=category_slug,
-                                     is_published=True)
-        return category.posts.filter_published()
+        return filter_published(
+            category_check(self.kwargs['category_slug']).posts.all()
+        )
 
     def get_context_data(self, **kwargs):
-        slug = self.kwargs['category_slug']
         return super().get_context_data(
             **kwargs,
-            category=Category.objects.get_published_category(slug)
+            category=category_check(self.kwargs['category_slug'])
         )
 
 
@@ -121,19 +118,12 @@ class ProfileDetailView(DetailView):
 
     def get_object(self):
         return get_object_or_404(User, username=self.kwargs['username'])
-# TODO MANAGER
+
     def get_context_data(self, **kwargs):
         author = self.get_object()
-        if self.request.user.username == author.username:
-            posts = (author
-                     .posts(manager='posts_manager')
-                     .get_user_post_cards(author)
-                     )
-        else:
-            posts = (author
-                     .posts(manager='posts_manager')
-                     .get_other_user_post_cards(author)
-                     )
+        posts = get_posts(author.posts)
+        if self.request.user.username != author.username:
+            posts = filter_published(posts)
         paginator = Paginator(posts, PAGINATOR_BY)
         page = self.request.GET.get('page')
         return super().get_context_data(
@@ -162,14 +152,12 @@ def edit_comment(request, post_id, comment_id):
     if comment.author != request.user:
         return redirect('blog:post_detail', post_id=post_id)
 
-    if request.method == 'POST':
-        form = CommentsForm(request.POST, instance=comment)
+    form = CommentsForm(request.POST or None, instance=comment)
 
-        if form.is_valid():
-            form.save()
-            return redirect('blog:post_detail', post_id=post_id)
-    else:
-        form = CommentsForm(instance=comment)
+    if form.is_valid():
+        form.save()
+        return redirect('blog:post_detail', post_id=post_id)
+
     return render(request, 'blog/comment.html', {
         'form': form,
         'post': post,

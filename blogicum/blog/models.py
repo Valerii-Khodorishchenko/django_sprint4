@@ -8,47 +8,6 @@ from django.utils import timezone
 User = get_user_model()
 
 
-class CategoryQuerySet(models.QuerySet):
-    def get_published_category(self, slug):
-        return get_object_or_404(self, slug=slug, is_published=True)
-
-
-class PostQuerySet(models.QuerySet):
-
-    def filter_published(self):
-        return self.filter(
-            pub_date__lte=timezone.now(),
-            is_published=True,
-            category__is_published=True
-        )
-
-    def filter_by_author(self, author):
-        return self.filter(author=author)
-
-    def get_posts(self):
-        return (
-            self.select_related('location', 'author', 'category')
-            .order_by('-pub_date', 'title')
-            .annotate(comment_count=Count('comments'))
-        )
-
-
-class PostManager(models.Manager):
-    def get_user_post_cards(self, author):
-        return PostQuerySet(self.model).get_posts().filter_by_author(author)
-
-    def get_other_user_post_cards(self, author):
-        return (
-            PostQuerySet(self.model)
-            .get_posts()
-            .filter_by_author(author)
-            .filter_published()
-        )
-
-    def get_published_posts(self):
-        return PostQuerySet(self.model).get_posts().filter_published()
-
-
 class PublicationModel(models.Model):
     is_published = models.BooleanField(
         verbose_name='Опубликовано',
@@ -71,7 +30,6 @@ class Category(PublicationModel):
                    'латиницы, цифры, дефис и подчёркивание.'),
         unique=True
     )
-    objects = CategoryQuerySet.as_manager()
 
     class Meta:
         verbose_name = 'категория'
@@ -124,8 +82,6 @@ class Post(PublicationModel):
         upload_to='posts_images',
         blank=True
     )
-    objects = PostQuerySet.as_manager()
-    posts_manager = PostManager()
 
     class Meta:
         default_related_name = 'posts'
@@ -161,3 +117,31 @@ class Comments(models.Model):
 
     def __str__(self):
         return self.text[20] + '...'
+
+
+def category_check(slug):
+    return get_object_or_404(
+        Category,
+        slug=slug,
+        is_published=True,
+    )
+
+
+def filter_published(queryset):
+    return queryset.filter(
+        pub_date__lte=timezone.now(),
+        is_published=True,
+        category__is_published=True
+    )
+
+
+def get_posts(posts):
+    return posts.select_related(
+        'location',
+        'author',
+        'category'
+    ).annotate(
+        comment_count=Count('comments')
+    ).order_by(
+        '-pub_date',
+    )
