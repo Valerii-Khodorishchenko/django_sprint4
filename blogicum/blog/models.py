@@ -117,7 +117,7 @@ class Comments(models.Model):
         return self.text[20]
 
 
-def get_filtered_posts(posts, filter_published=True,
+def get_filtered_posts(posts=Post.objects, filter_published=True,
                        selected_related=True, comment_count=True):
     if selected_related:
         posts = posts.select_related(
@@ -126,7 +126,11 @@ def get_filtered_posts(posts, filter_published=True,
             'category',
         )
     if comment_count:
-        posts = posts.annotate(comment_count=Count('comments'))
+        posts = (
+            posts
+            .annotate(comment_count=Count("comments"))
+            .order_by(*posts.model._meta.ordering)
+        )
 
     if filter_published:
         posts = posts.filter(
@@ -134,4 +138,4 @@ def get_filtered_posts(posts, filter_published=True,
             is_published=True,
             category__is_published=True
         )
-    return posts.order_by(*posts.model._meta.ordering)
+    return posts

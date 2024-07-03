@@ -34,10 +34,10 @@ class PostChangeMixin:
     pk_url_kwarg = 'post_id'
 
 
-class CommentsCountMixin:
+class PostsListMixin:
     model = Post
     paginate_by = PAGINATOR_BY
-    queryset = Comments.objects.select_related('author')
+    # queryset = Comments.objects.select_related('author')
 
 
 class PostCreateView(FormValidMixin, LoginRequiredMixin, CreateView):
@@ -76,7 +76,7 @@ class PostDetailView(DetailView):
         if post.author == self.request.user:
             return post
         return get_object_or_404(
-            get_filtered_posts(Post.objects, comment_count=False),
+            get_filtered_posts(selected_related=True, comment_count=False),
             id=post.id
         )
 
@@ -88,17 +88,16 @@ class PostDetailView(DetailView):
         )
 
 
-class PostsListView(CommentsCountMixin, ListView):
+class PostsListView(PostsListMixin, ListView):
     template_name = 'blog/index.html'
-    queryset = get_filtered_posts(Post.objects)
+    queryset = get_filtered_posts()
 
 
-class CategoryPostListView(CommentsCountMixin, ListView):
+class CategoryPostListView(PostsListMixin, ListView):
     template_name = 'blog/category.html'
 
     def get_queryset(self):
-        category = self.get_category()
-        return get_filtered_posts(category.posts)
+        return get_filtered_posts(posts=self.get_category().posts)
 
     def get_context_data(self, **kwargs):
         return super().get_context_data(**kwargs, category=self.get_category())
@@ -120,15 +119,15 @@ class ProfileDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         author = self.get_object()
-        posts = get_filtered_posts(
-            author.posts,
-            filter_published=(self.request.user.username != author.username),
-        )
-        paginator = Paginator(posts, PAGINATOR_BY)
-        page = self.request.GET.get('page')
         return super().get_context_data(
             **kwargs,
-            page_obj=paginator.get_page(page)
+            page_obj=Paginator(
+                get_filtered_posts(
+                    posts=author.posts,
+                    filter_published=(self.request.user != author)
+                ),
+                PAGINATOR_BY
+            ).get_page(self.request.GET.get('page'))
         )
 
 
@@ -143,7 +142,7 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     def get_success_url(self):
         return reverse_lazy(
             'blog:profile',
-            kwargs={'username': self.request.user.username}
+            args=[self.request.user.username]
         )
 
 
@@ -162,7 +161,7 @@ def add_comment(request, post_id):
 @login_required
 def edit_comment(request, post_id, comment_id):
     comment = get_object_or_404(
-        Comments.objects.select_related('post'),
+        Comments.objects,
         pk=comment_id,
         post_id=post_id
     )
@@ -182,7 +181,7 @@ def edit_comment(request, post_id, comment_id):
 @login_required
 def delete_comment(request, post_id, comment_id):
     comment = get_object_or_404(
-        Comments.objects.select_related('post'),
+        Comments.objects,
         pk=comment_id,
         post_id=post_id
     )
