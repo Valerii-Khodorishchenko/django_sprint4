@@ -37,7 +37,6 @@ class PostChangeMixin:
 class PostsListMixin:
     model = Post
     paginate_by = PAGINATOR_BY
-    # queryset = Comments.objects.select_related('author')
 
 
 class PostCreateView(FormValidMixin, LoginRequiredMixin, CreateView):
@@ -76,7 +75,7 @@ class PostDetailView(DetailView):
         if post.author == self.request.user:
             return post
         return get_object_or_404(
-            get_filtered_posts(selected_related=True, comment_count=False),
+            get_filtered_posts(selected_related=False, comment_count=False),
             id=post.id
         )
 
@@ -161,7 +160,7 @@ def add_comment(request, post_id):
 @login_required
 def edit_comment(request, post_id, comment_id):
     comment = get_object_or_404(
-        Comments.objects,
+        Comments,
         pk=comment_id,
         post_id=post_id
     )
@@ -181,7 +180,7 @@ def edit_comment(request, post_id, comment_id):
 @login_required
 def delete_comment(request, post_id, comment_id):
     comment = get_object_or_404(
-        Comments.objects,
+        Comments,
         pk=comment_id,
         post_id=post_id
     )
