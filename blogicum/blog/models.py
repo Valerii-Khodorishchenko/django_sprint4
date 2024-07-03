@@ -1,7 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import Count
-from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
 

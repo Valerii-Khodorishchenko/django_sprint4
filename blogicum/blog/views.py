@@ -178,6 +178,7 @@ def edit_comment(request, post_id, comment_id):
         'comment': comment,
     })
 
+
 @login_required
 def delete_comment(request, post_id, comment_id):
     comment = get_object_or_404(
