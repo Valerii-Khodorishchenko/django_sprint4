@@ -36,7 +36,7 @@ class Category(PublicationModel):
         verbose_name_plural = 'Категории'
 
     def __str__(self):
-        return self.title[:20] + '...'
+        return self.title[:20]
 
 
 class Location(PublicationModel):
@@ -47,7 +47,7 @@ class Location(PublicationModel):
         verbose_name_plural = 'Местоположения'
 
     def __str__(self):
-        return self.name[:20] + '...'
+        return self.name[:20]
 
 
 class Post(PublicationModel):
@@ -69,7 +69,6 @@ class Post(PublicationModel):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='posts_at_location',
     )
     category = models.ForeignKey(
         Category,
@@ -90,7 +89,7 @@ class Post(PublicationModel):
         ordering = ('-pub_date', 'title')
 
     def __str__(self):
-        return f'Пост: {self.title[:20]}... |Текст: {self.text[:40]}...'
+        return f'Пост: {self.title[:20]} |Текст: {self.text[:40]}'
 
 
 class Comments(models.Model):
@@ -116,32 +115,24 @@ class Comments(models.Model):
         ordering = ('created_at',)
 
     def __str__(self):
-        return self.text[20] + '...'
+        return self.text[20]
 
 
-def category_check(slug):
-    return get_object_or_404(
-        Category,
-        slug=slug,
-        is_published=True,
-    )
+def get_filtered_posts(posts, filter_published=True,
+                       selected_related=True, comment_count=True):
+    if selected_related:
+        posts = posts.select_related(
+            'location',
+            'author',
+            'category',
+        )
+    if comment_count:
+        posts = posts.annotate(comment_count=Count('comments'))
 
-
-def filter_published(queryset):
-    return queryset.filter(
-        pub_date__lte=timezone.now(),
-        is_published=True,
-        category__is_published=True
-    )
-
-
-def get_posts(posts):
-    return posts.select_related(
-        'location',
-        'author',
-        'category'
-    ).annotate(
-        comment_count=Count('comments')
-    ).order_by(
-        '-pub_date',
-    )
+    if filter_published:
+        posts = posts.filter(
+            pub_date__lte=timezone.now(),
+            is_published=True,
+            category__is_published=True
+        )
+    return posts.order_by(*posts.model._meta.ordering)

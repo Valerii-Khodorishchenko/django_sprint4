@@ -1,9 +1,8 @@
 from django.contrib.auth import get_user_model, login
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, UpdateView
+from django.views.generic import CreateView
 
-from .form import CustomUserCreationForm, CustomUserChangeForm
+from .form import CustomUserCreationForm
 
 
 User = get_user_model()
@@ -20,18 +19,3 @@ class UserCreateView(CreateView):
         user = form.save()
         login(self.request, user)
         return response
-
-
-class ProfileUpdateView(LoginRequiredMixin, UpdateView):
-    model = User
-    form_class = CustomUserChangeForm
-    template_name = 'blog/user.html'
-
-    def get_object(self):
-        return self.request.user
-
-    def get_success_url(self):
-        return reverse_lazy(
-            'blog:profile',
-            kwargs={'username': self.request.user.username}
-        )
